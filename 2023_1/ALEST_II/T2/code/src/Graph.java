@@ -29,7 +29,7 @@ public class Graph {
     }
 
     public static void main(String[] args) {
-        Map<Character, Integer> targets = new HashMap<>();
+        Map<String, Integer> targets = new HashMap<>();
         List<String> lines = new ArrayList<>();
 
         try(BufferedReader reader = new BufferedReader(new FileReader("mapa30.txt"))) {
@@ -51,7 +51,7 @@ public class Graph {
                     int nodePos = (row * W) + col;
 
                     if (Character.isDigit(lineData.charAt(col))) {
-                        targets.put(lineData.charAt(col), nodePos);
+                        targets.put(String.valueOf(lineData.charAt(col)), nodePos);
                     }
                     if (lineData.charAt(col) != '*') {
                         if (col < W - 1 && lineData.charAt(col + 1) != '*') {
@@ -67,14 +67,41 @@ public class Graph {
             }
             reader.close();
 
-            char source = '9';
-            char target = '1';
+            int combustivelTotal = 0;
+            for (int i = 1; i < targets.size(); i++) {
+                BFS bfs = new BFS(graph, targets.get(String.valueOf(i)));
+                List<Integer> path = bfs.pathTo(targets.get(String.valueOf(i + 1)));
 
-            BFS bfs = new BFS(graph, targets.get(source));
-            List<Integer> path = bfs.pathTo(targets.get(target));
+                System.out.printf("distancia de %d ate %d: %d\n", i, i + 1, path.size() - 1);
 
-            System.out.printf("distancia de %d ate %d: %d\n", targets.get(source), targets.get(target), path.size() - 1);
+                if (path.size() == 0) {
+                    for (int j = i + 2; j < targets.size(); j++) {
+                        bfs = new BFS(graph, targets.get(String.valueOf(i)));
+                        path = bfs.pathTo(targets.get(String.valueOf(j)));
 
+                        System.out.printf("distancia de %d ate %d: %d\n", i, j, path.size() - 1);
+
+                        if (path.size() != 0) {
+                            combustivelTotal += path.size() - 1;
+                            i = j - 1;
+                            break;
+                        }
+                    }
+                } else {
+                    combustivelTotal += path.size() - 1;
+                }
+            }
+
+            String first = targets.keySet().iterator().next();
+            String last = targets.entrySet().stream().reduce((one, two) -> two).get().getKey();
+            BFS bfs = new BFS(graph, targets.get(last));
+            List<Integer> path = bfs.pathTo(targets.get(first));
+
+            if (path.size() != 0)
+                combustivelTotal += path.size() - 1;
+
+            System.out.printf("distancia de %s ate %s: %d\n", last, first, path.size() - 1);
+            System.out.println("\n Combustível total: " + combustivelTotal);
         } catch (IOException e) {
             e.printStackTrace();
         }
